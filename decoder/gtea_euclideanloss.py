@@ -68,7 +68,8 @@ def loss(hypes, decoded_logits, probs):
         # logits = logits + epsilon
         probs = tf.to_float(tf.reshape(probs, (-1, 2)))
 
-        softmax = tf.nn.softmax(logits) + epsilon
+        # softmax = tf.nn.softmax(logits) + epsilon
+        softmax = tf.nn.softmax(logits)
 
         """
         if hypes['loss'] == 'xentropy':
@@ -100,7 +101,10 @@ def loss(hypes, decoded_logits, probs):
 
 
 def _compute_euclidean_pixel(probs, softmax):
-    euclidean_sum = tf.reduce_sum(tf.squared_difference(probs, softmax))
+    gt_obj_prob = probs[:, 1]
+    out_obj_prob = softmax[:, 1]
+    euclidean_sum = tf.reduce_sum(tf.squared_difference(gt_obj_prob, out_obj_prob))
+    # euclidean_sum = tf.reduce_sum(tf.squared_difference(probs, softmax))
 
     return euclidean_sum
 

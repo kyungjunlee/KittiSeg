@@ -3,7 +3,7 @@
     "input_file": "../inputs/gtea_ooi_input.py",
     "architecture_file" : "../encoder/fcn8_vgg.py",
     "objective_file" : "../decoder/gtea_euclideanloss.py",
-    "optimizer_file" : "../optimizer/generic_optimizer.py",
+    "optimizer_file" : "../optimizer/GTEA_optimizer.py",
     "evaluator_file" : "../evals/gtea_ooi_eval.py"
   },
   "path": ["../incl"],
@@ -65,12 +65,12 @@
       "epsilon": 0.000000001,
       "adam_eps": 0.00001,
       "threads": 4,
-      "learning_rate": 1e-5,
+      "learning_rate": 1e-4,
       "learning_rate_step": null,
       "max_steps": 200
   },
   "use_fc_wd": true,
   "loss": "euclidean",
-  "clip_norm" : 1.0,
+  "clip_norm" : 0,
   "wd": 5e-4
 }
