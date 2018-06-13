@@ -76,18 +76,40 @@ def training(hypes, loss, global_step, learning_rate, opt=None):
 
         # get the final layer and others if necessary
         # TODO: what layers should we finetune ?
-        train_layers = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "upscore32") + \
-                        tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "score_pool3") #+ \
-                        # tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "upscore4") + \
-                        # tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "score_pool4") + \
-                        # tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "upscore2") + \
-                        # tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "score_fr") + \
-                        # tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "fc7")
+        """ for FCN8
+        train_layers = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "upscore32") +\
+                tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "score_pool3") +\
+                tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "upscore4") +\
+                tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "score_pool4") +\
+                tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "score_fr")# +
+                # tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "fc7")
+        """
+        retrain_from = hypes["arch"]["retrain_from"]
+        if retrain_from == "all":
+            grads_and_vars = opt.compute_gradients(total_loss)
+            print("=== retraining all layers ===")
 
-        # train only the final layer 
+        else:
+            if retrain_from == "pool5":
+                train_layers = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "up") +\
+                    tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "score_fr") +\
+                    tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "fc7") +\
+                    tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "fc6")    
+            elif retrain_from == "fc6":
+                train_layers = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "up") +\
+                    tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "score_fr") +\
+                    tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "fc7")
+            elif retrain_from == "fc7":
+                train_layers = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "up") +\
+                    tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "score_fr")
+            else:
+                train_layers = []
+
+            # DEBUG: print retraining layers
+            print("retraining layers: ", train_layers)
+            grads_and_vars = opt.compute_gradients(total_loss, var_list = train_layers)
+
         # train_op = opt.minimize(total_loss, var_list=train_layers)
-
-        grads_and_vars = opt.compute_gradients(total_loss, var_list = train_layers)
 
         if hypes['clip_norm'] > 0:
             grads, tvars = zip(*grads_and_vars)
@@ -99,6 +121,8 @@ def training(hypes, loss, global_step, learning_rate, opt=None):
 
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
 
+        # DEBUG: print update operations
+        print("update ops: ", update_ops)
         with tf.control_dependencies(update_ops):
             train_op = opt.apply_gradients(grads_and_vars,
                                            global_step=global_step)

@@ -71,7 +71,9 @@ flags.DEFINE_string('output_image', None,
                     'Image to apply KittiSeg.')
 
 
-default_run = 'KittiSeg_pretrained'
+#default_run = 'KittiSeg_pretrained'
+default_run = 'GTEA'
+#GTEA_ooi_run = 'GTEA_ooi'
 weights_url = ("ftp://mi.eng.cam.ac.uk/"
                "pub/mttt2/models/KittiSeg_pretrained.zip")
 
@@ -122,8 +124,9 @@ def main(_):
                                     'KittiSeg')
         else:
             runs_dir = 'RUNS'
-        maybe_download_and_extract(runs_dir)
+        #maybe_download_and_extract(runs_dir)
         logdir = os.path.join(runs_dir, default_run)
+        #logdir = os.path.join(runs_dir, GTEA_ooi_run)
     else:
         logging.info("Using weights found in {}".format(FLAGS.logdir))
         logdir = FLAGS.logdir

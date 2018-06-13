@@ -26,8 +26,8 @@ def eval_image(hypes, gt_image, cnn_image):
     heatmap_color = np.array(hypes['data']['heatmap_color'])
     background_color = np.array(hypes['data']['background_color'])
     # calculate the probability of an object of interest location in each pixel
-    gt_obj = np.max(gt_image / 255., axis=2)
-    gt_bg = 1. - gt_obj
+    gt_obj = np.any(gt_image != background_color, axis=2)
+    gt_bg = np.all(gt_image == background_color, axis=2)
     valid_gt = gt_obj + gt_bg
 
     FN, FP, posNum, negNum = seg.evalExp(gt_obj, cnn_image,
@@ -119,12 +119,12 @@ def evaluate(hypes, sess, image_pl, inf_out):
                         name = os.path.basename(image_file)
                         image_list.append((name, ov_image))
 
-                        name2 = name.split('.')[0] + '_red.png'
+                        name2 = name.split('.')[0] + '_blue.png'
 
                         hard = output_im > 0.5
-                        red_image = utils.fast_overlay(image, hard, \
-                                        color=[0,100,100,255])
-                        image_list.append((name2, red_image))
+                        blue_image = utils.fast_overlay(image, hard, \
+                                        color=[0, 0, 255, 127])
+                        image_list.append((name2, blue_image))
 
                     FN, FP, posNum, negNum = eval_image(hypes,
                                                         gt_image, output_im)

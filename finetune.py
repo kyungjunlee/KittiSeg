@@ -86,6 +86,61 @@ else:
                        'hence it will get overwritten by further runs.'))
 
 
+def _score_layer(self, bottom, name, num_classes):
+    with tf.variable_scope(name) as scope:
+        # get number of input channels
+        in_features = bottom.get_shape()[3].value
+        shape = [1, 1, in_features, num_classes]
+        # He initialization Sheme
+        num_input = in_features
+        stddev = (2 / num_input)**0.5
+        # Apply convolution
+        w_decay = self.wd
+        weights = self._variable_with_weight_decay(shape, stddev, w_decay)
+        conv = tf.nn.conv2d(bottom, weights, [1, 1, 1, 1], padding='SAME')
+        # Apply bias
+        conv_biases = self._bias_variable([num_classes], constant=0.0)
+        bias = tf.nn.bias_add(conv, conv_biases)
+
+        _activation_summary(bias)
+
+        return bias
+
+def _upscore_layer(self, bottom, shape,
+                   num_classes, name, debug,
+                   ksize=4, stride=2):
+    strides = [1, stride, stride, 1]
+    with tf.variable_scope(name):
+        in_features = bottom.get_shape()[3].value
+
+        if shape is None:
+            # Compute shape out of Bottom
+            in_shape = tf.shape(bottom)
+
+            h = ((in_shape[1] - 1) * stride) + 1
+            w = ((in_shape[2] - 1) * stride) + 1
+            new_shape = [in_shape[0], h, w, num_classes]
+        else:
+            new_shape = [shape[0], shape[1], shape[2], num_classes]
+        output_shape = tf.stack(new_shape)
+
+        logging.debug("Layer: %s, Fan-in: %d" % (name, in_features))
+        f_shape = [ksize, ksize, num_classes, in_features]
+
+        # create
+        num_input = ksize * ksize * in_features / stride
+        stddev = (2 / num_input)**0.5
+
+        weights = self.get_deconv_filter(f_shape)
+        deconv = tf.nn.conv2d_transpose(bottom, weights, output_shape,
+                                        strides=strides, padding='SAME')
+
+        if debug:
+            deconv = tf.Print(deconv, [tf.shape(deconv)],
+                              message='Shape of %s' % name,
+                              summarize=4, first_n=1)
+
+
 def load_trained_model(sess, hypes):
     """
     Load an exsiting model trained for hand segmentation
@@ -132,14 +187,12 @@ def prepare_tv_session(hypes, sess, saver):
         summary_op = None
 
     # Run the Op to initialize the variables.
-    """
     if 'init_function' in hypes:
         _initalize_variables = hypes['init_function']
         _initalize_variables(hypes)
     else:
         init = tf.global_variables_initializer()
         sess.run(init)
-    """
 
     # Start the queue runners.
     coord = tf.train.Coordinator()
@@ -173,6 +226,57 @@ def check_weights(sess):
 
     for k, v in zip(vars_names, values):
         print(k, v)
+
+
+def check_graph(sess):
+    vars_names = [v.name for v in tf.trainable_variables()]
+    vars_shapes = [v.get_shape() for v in tf.trainable_variables()]
+
+    # values = sess.run(vars_names)
+
+    for name, shape in zip(vars_names, vars_shapes):
+        print(name, shape)
+
+
+def restoring_vars(hypes, sess):
+    retrain_from = hypes["arch"]["retrain_from"]
+    if retrain_from == "pool5":
+        restoring_vars_names = ["conv1_1", "conv1_2", "pool1", 
+                    "conv2_1", "conv2_2", "pool2",
+                    "conv3_1", "conv3_2", "conv3_3", "pool3",
+                    "conv4_1", "conv4_2", "conv4_3", "pool4",
+                    "conv5_1", "conv5_2", "conv5_3", "pool5"]
+    elif retrain_from == "fc6":
+        restoring_vars_names = ["conv1_1", "conv1_2", "pool1", 
+                    "conv2_1", "conv2_2", "pool2",
+                    "conv3_1", "conv3_2", "conv3_3", "pool3",
+                    "conv4_1", "conv4_2", "conv4_3", "pool4",
+                    "conv5_1", "conv5_2", "conv5_3", "pool5",
+                    "fc6"]
+    elif retrain_from == "fc7":
+        restoring_vars_names = ["conv1_1", "conv1_2", "pool1", 
+                    "conv2_1", "conv2_2", "pool2",
+                    "conv3_1", "conv3_2", "conv3_3", "pool3",
+                    "conv4_1", "conv4_2", "conv4_3", "pool4",
+                    "conv5_1", "conv5_2", "conv5_3", "pool5",
+                    "fc6", "fc7"]
+    else:
+        restoring_vars_names = ["conv1_1", "conv1_2", "pool1", 
+                    "conv2_1", "conv2_2", "pool2",
+                    "conv3_1", "conv3_2", "conv3_3", "pool3",
+                    "conv4_1", "conv4_2", "conv4_3", "pool4",
+                    "conv5_1", "conv5_2", "conv5_3", "pool5",
+                    "fc6", "fc7"]
+    
+    vars_to_restore = []
+
+    for name in restoring_vars_names:
+        var = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, name)
+        if var:
+            vars_to_restore += var
+
+    print("vars to restore", vars_to_restore)
+    return vars_to_restore
 
 
 def do_finetuning(hypes):
@@ -211,23 +315,37 @@ def do_finetuning(hypes):
 
         tv_graph = core.build_training_graph(hypes, queue, modules)
 
-        saver = tf.train.Saver()
+        # restoring vars
+        vars_to_restore = restoring_vars(hypes, sess)
+
+        restorer = tf.train.Saver(vars_to_restore)
 
         # load pre-trained model of hand segmentation
         logging.info("Loading pretrained model's weights")
         model_dir = hypes['transfer']['model_folder']
         model_file = hypes['transfer']['model_name']
         # DEBUG: check the model file
-        #check_model(os.path.join(model_dir, model_file))
-        
-        core.load_weights(model_dir, sess, saver)
+        # check_model(os.path.join(model_dir, model_file))
+
+        """
+        # Get a list of vars to restore
+        vars_to_restore = restoring_vars(sess)
+        print("vars to restore:", vars_to_restore)
+        # Create another Saver for restoring pre-trained vars
+        saver = tf.train.Saver(vars_to_restore)
+        """
+        core.load_weights(model_dir, sess, restorer)
         # load_trained_model(sess, hypes)
+
+        saver = tf.train.Saver(max_to_keep=int(utils.cfg.max_to_keep))
 
         # prepaire the tv session
         tv_sess = prepare_tv_session(hypes, sess, saver)
-        # DEBUG: print weights
-        #check_weights(tv_sess['sess'])
 
+        # DEBUG: print weights
+        # check_weights(tv_sess['sess'])
+        # check_graph(tv_sess['sess'])
+        
         with tf.name_scope('Validation'):
             tf.get_variable_scope().reuse_variables()
             image_pl = tf.placeholder(tf.float32)
@@ -247,7 +365,6 @@ def do_finetuning(hypes):
         # stopping input Threads
         tv_sess['coord'].request_stop()
         tv_sess['coord'].join(tv_sess['threads'])
-
 
 
 def main(_):

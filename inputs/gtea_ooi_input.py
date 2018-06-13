@@ -110,8 +110,9 @@ def _make_data_gen(hypes, phase, data_dir):
 
     for image, gt_image in data:
 
-        gt_obj = np.max(gt_image / 255.0, axis=2)
-        gt_bg = 1. - gt_obj
+        gt_obj = np.any(gt_image != background_color, axis=2)
+        gt_bg = np.all(gt_image == background_color, axis=2)
+        
         assert(gt_obj.shape == gt_bg.shape)
 
         shape = gt_bg.shape
@@ -264,7 +265,7 @@ def crop_to_size(hypes, image, gt_image):
 def create_queues(hypes, phase):
     """Create Queues."""
     arch = hypes['arch']
-    dtypes = [tf.float32, tf.float32]
+    dtypes = [tf.float32, tf.int32]
 
     shape_known = hypes['jitter']['reseize_image'] \
         or hypes['jitter']['crop_patch']
@@ -295,19 +296,19 @@ def create_queues(hypes, phase):
 def start_enqueuing_threads(hypes, q, phase, sess):
     """Start enqueuing threads."""
     image_pl = tf.placeholder(tf.float32)
-    prob_pl = tf.placeholder(tf.float32)
+    label_pl = tf.placeholder(tf.int32)
     data_dir = hypes['dirs']['data_dir']
 
     def make_feed(data):
-        image, prob = data
-        return {image_pl: image, prob_pl: prob}
+        image, label = data
+        return {image_pl: image, label_pl: label}
 
     def enqueue_loop(sess, enqueue_op, phase, gen):
         # infinity loop enqueueing data
         for d in gen:
             sess.run(enqueue_op, feed_dict=make_feed(d))
 
-    enqueue_op = q.enqueue((image_pl, prob_pl))
+    enqueue_op = q.enqueue((image_pl, label_pl))
     gen = _make_data_gen(hypes, phase, data_dir)
     gen.next()
     # sess.run(enqueue_op, feed_dict=make_feed(data))
@@ -408,21 +409,21 @@ def _processe_image(hypes, image):
 def inputs(hypes, q, phase):
     """Generate Inputs images."""
     if phase == 'val':
-        image, prob = q.dequeue()
+        image, label = q.dequeue()
         image = tf.expand_dims(image, 0)
-        prob = tf.expand_dims(prob, 0)
-        return image, prob
+        label = tf.expand_dims(label, 0)
+        return image, label
 
     shape_known = hypes['jitter']['reseize_image'] \
         or hypes['jitter']['crop_patch']
 
     if not shape_known:
-        image, prob = q.dequeue()
+        image, label = q.dequeue()
         nc = hypes["arch"]["num_classes"]
-        prob.set_shape([None, None, nc])
+        label.set_shape([None, None, nc])
         image.set_shape([None, None, 3])
-        image = tf.expand_dims(image, 0)
-        prob = tf.expand_dims(prob, 0)
+        image = tf.expand_dims(image, 0) # [1, None, None, 3]
+        label = tf.expand_dims(label, 0) # [1, None, None, nc]
         if hypes['solver']['batch_size'] > 1:
             logging.error("Using a batch_size of {} with unknown shape."
                           .format(hypes['solver']['batch_size']))
@@ -430,7 +431,7 @@ def inputs(hypes, q, phase):
                           "or `crop_patch` to obtain a defined shape")
             raise ValueError
     else:
-        image, prob = q.dequeue_many(hypes['solver']['batch_size'])
+        image, label = q.dequeue_many(hypes['solver']['batch_size'])
 
     image = _processe_image(hypes, image)
 
@@ -438,10 +439,10 @@ def inputs(hypes, q, phase):
     tensor_name = image.op.name
     tf.summary.image(tensor_name + '/image', image)
 
-    obj = tf.expand_dims(tf.to_float(prob[:, :, :, 0]), 3)
+    obj = tf.expand_dims(tf.to_float(label[:, :, :, 0]), 3)
     tf.summary.image(tensor_name + '/gt_image', obj)
 
-    return image, prob
+    return image, label
 
 
 def main():

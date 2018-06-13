@@ -35,7 +35,8 @@ def inference(hypes, images, train=True):
 
     vgg_fcn.wd = hypes['wd']
 
-    vgg_fcn.build(images, train=train, num_classes=2, random_init_fc8=True)
+    num_classes = hypes['arch']['num_classes']
+    vgg_fcn.build(images, train=train, num_classes=num_classes, random_init_fc8=True)
 
     logits = {}
 
@@ -55,5 +56,28 @@ def inference(hypes, images, train=True):
 
     logits['deep_feat'] = vgg_fcn.pool5
     logits['early_feat'] = vgg_fcn.conv4_3
+
+    # List what variables to save and restore for finetuning
+    """
+    vars_to_save = {"conv1_1": vgg_fcn.conv1_1, "conv1_2": vgg_fcn.conv1_2,
+                    "pool1": vgg_fcn.pool1,
+                    "conv2_1": vgg_fcn.conv2_1, "conv2_2": vgg_fcn.conv2_2,
+                    "pool2": vgg_fcn.pool2,
+                    "conv3_1": vgg_fcn.conv3_1, "conv3_2": vgg_fcn.conv3_2,
+                    "conv3_3": vgg_fcn.conv3_3, "pool3": vgg_fcn.pool3,
+                    "conv4_1": vgg_fcn.conv4_1, "conv4_2": vgg_fcn.conv4_2,
+                    "conv4_3":  vgg_fcn.conv4_3, "pool4": vgg_fcn.pool4,
+                    "conv5_1": vgg_fcn.conv5_1, "conv5_2": vgg_fcn.conv5_2,
+                    "conv5_3": vgg_fcn.conv5_3, "pool5": vgg_fcn.pool5,
+                    "fc6": vgg_fcn.fc6, "fc7": vgg_fcn.fc7}
+    """
+    vars_to_save = (vgg_fcn.conv1_1, vgg_fcn.conv1_2,
+                    vgg_fcn.conv2_1, vgg_fcn.conv2_2,
+                    vgg_fcn.conv3_1, vgg_fcn.conv3_2, vgg_fcn.conv3_3,
+                    vgg_fcn.conv4_1, vgg_fcn.conv4_2, vgg_fcn.conv4_3,
+                    vgg_fcn.conv5_1, vgg_fcn.conv5_2, vgg_fcn.conv5_3,
+                    vgg_fcn.fc6, vgg_fcn.fc7)
+
+    logits['saving_vars'] = vars_to_save
 
     return logits

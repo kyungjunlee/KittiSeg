@@ -1,16 +1,16 @@
 {
   "model": {
     "input_file": "../inputs/gtea_ooi_input.py",
-    "architecture_file" : "../encoder/fcn8_vgg.py",
-    "objective_file" : "../decoder/gtea_euclideanloss.py",
+    "architecture_file" : "../encoder/fcn32_vgg.py",
+    "objective_file" : "../decoder/gtea_loss.py",
     "optimizer_file" : "../optimizer/GTEA_optimizer.py",
     "evaluator_file" : "../evals/gtea_ooi_eval.py"
   },
   "path": ["../incl"],
 
   "data": {
-    "train_file" : "GTEA/train_obj.txt",
-    "val_file" : "GTEA/val_obj.txt",
+    "train_file" : "GTEA/train_loc.txt",
+    "val_file" : "GTEA/val_loc.txt",
     "heatmap_color" : [0,0,255],
     "background_color" : [0,0,0],
     "vgg_url": "ftp://mi.eng.cam.ac.uk/pub/mttt2/models/vgg16.npy",
@@ -18,17 +18,18 @@
   },
 
   "transfer": {
-    "model_folder" : "RUNS/GTEA_2018_02_27_21.25",
-    "model_name" : "model.ckpt-199"
+    "model_folder" : "RUNS/GTEA_hand_fcn32_10t",
+    "model_name" : "model.ckpt-9999"
   },
 
   "arch": {
-    "fcn_in": "fc7",
+    "fcn_in": "pool5",
     "num_classes" : 2,
     "image_size" : 50,
     "weight": [1, 1],
     "num_channels" : 3,
-    "whitening": false
+    "whitening": false,
+    "retrain_from": "fc7"
   },
 
   "jitter": {
@@ -45,15 +46,15 @@
     "crop_chance": 0.8,
     "fix_shape": false,
     "reseize_image": false,
-    "image_height" : 384,
-    "image_width" : 1248,
+    "image_height" : 640,
+    "image_width" : 640,
 
     "augment_level": 0
   },
 
   "logging": {
     "display_iter": 20,
-    "eval_iter": 100,
+    "eval_iter": 10000,
     "write_iter": 100,
     "save_iter": 2000,
     "image_iter": 20000
@@ -65,12 +66,12 @@
       "epsilon": 0.000000001,
       "adam_eps": 0.00001,
       "threads": 4,
-      "learning_rate": 1e-4,
+      "learning_rate": 1e-8,
       "learning_rate_step": null,
-      "max_steps": 200
+      "max_steps": 10000
   },
   "use_fc_wd": true,
-  "loss": "euclidean",
+  "loss": "xentropy",
   "clip_norm" : 0,
   "wd": 5e-4
 }

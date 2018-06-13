@@ -47,6 +47,8 @@ def decoder(hypes, logits, train):
     decoded_logits = {}
     decoded_logits['logits'] = logits['fcn_logits']
     decoded_logits['softmax'] = _add_softmax(hypes, logits['fcn_logits'])
+    # decoded_logits['saving_vars'] = logits['saving_vars']
+    
     return decoded_logits
 
 

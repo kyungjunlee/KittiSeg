@@ -16,6 +16,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 import commentjson
+#import json as commentjson
 import logging
 import os
 import sys
