@@ -57,7 +57,7 @@
 
   "solver": {
       "opt": "Adam",
-      "batch_size": 1024,
+      "batch_size": 128,
       "epsilon": 0.000000001,
       "adam_eps": 0.00001,
       "threads": 4,
