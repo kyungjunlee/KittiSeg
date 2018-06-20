@@ -40,7 +40,7 @@
     "max_crop": 32,
     "crop_chance": 0.8,
     "fix_shape": false,
-    "reseize_image": true,
+    "resize_image": true,
     "image_height" : 384,
     "image_width" : 1248,
 

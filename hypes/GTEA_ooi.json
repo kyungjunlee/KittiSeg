@@ -45,7 +45,7 @@
     "patch_width": 256,
     "crop_chance": 0.8,
     "fix_shape": false,
-    "reseize_image": false,
+    "resize_image": false,
     "image_height" : 640,
     "image_width" : 640,
 
