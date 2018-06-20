@@ -48,11 +48,21 @@ def maybe_download_and_extract(hypes):
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
 
-    gtea_dir = os.path.join(data_dir, 'GTEA/')
-    gtea_img_dir = os.path.join(gtea_dir, 'Images/')
+    # first check whether there is vgg_weights
+    vgg_weights = os.path.join(data_dir, 'vgg16.npy')
 
-    # GTEA DATA
-    logging.info("Preparing GTEA hand data.")
+    if os.path.exists(vgg_weights):
+        return
+
+    import tensorvision.utils as utils
+    import zipfile
+    from shutil import copy2
+
+    vgg_url = kitti_data_url = hypes['data']['vgg_url']
+    # Download VGG DATA
+    download_command = "wget {} -P {}".format(vgg_url, data_dir)
+    logging.info("Downloading VGG weights.")
+    utils.download(vgg_url, data_dir)
 
     return
 
