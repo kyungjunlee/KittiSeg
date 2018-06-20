@@ -41,29 +41,29 @@
     "crop_chance": 0.8,
     "fix_shape": false,
     "resize_image": true,
-    "image_height" : 640,
-    "image_width" : 640,
+    "image_height" : 720,
+    "image_width" : 405,
 
     "augment_level": 0
   },
 
   "logging": {
-    "display_iter": 50,
+    "display_iter": 100,
     "eval_iter": 1000,
     "write_iter": 1000,
     "save_iter": 2000,
-    "image_iter": 20000
+    "image_iter": 10000
   },
 
   "solver": {
       "opt": "Adam",
-      "batch_size": 128,
+      "batch_size": 8,
       "epsilon": 0.000000001,
       "adam_eps": 0.00001,
       "threads": 4,
       "learning_rate": 1e-5,
       "learning_rate_step": null,
-      "max_steps": 20000
+      "max_steps": 10000
   },
   "use_fc_wd": true,
   "loss": "xentropy",
