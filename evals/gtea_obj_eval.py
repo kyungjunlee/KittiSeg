@@ -105,7 +105,7 @@ def evaluate(hypes, sess, image_pl, inf_out):
                         new_image[offset_x:offset_x+shape[0],
                                   offset_y:offset_y+shape[1]] = image
                         input_image = new_image
-                    elif hypes['jitter']['reseize_image']:
+                    elif hypes['jitter']['resize_image']:
                         image_height = hypes['jitter']['image_height']
                         image_width = hypes['jitter']['image_width']
                         gt_image_old = gt_image

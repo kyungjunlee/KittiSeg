@@ -192,7 +192,7 @@ def jitter_input(hypes, image, gt_image):
         crop_chance = jitter['crop_chance']
         image, gt_image = random_crop_soft(image, gt_image, max_crop)
 
-    if jitter['reseize_image']:
+    if jitter['resize_image']:
         image_height = jitter['image_height']
         image_width = jitter['image_width']
         image, gt_image = resize_label_image(image, gt_image,
@@ -309,7 +309,7 @@ def create_queues(hypes, phase):
     arch = hypes['arch']
     dtypes = [tf.float32, tf.int32]
 
-    shape_known = hypes['jitter']['reseize_image'] \
+    shape_known = hypes['jitter']['resize_image'] \
         or hypes['jitter']['crop_patch']
 
     if shape_known:
@@ -456,7 +456,7 @@ def inputs(hypes, q, phase):
         label = tf.expand_dims(label, 0)
         return image, label
 
-    shape_known = hypes['jitter']['reseize_image'] \
+    shape_known = hypes['jitter']['resize_image'] \
         or hypes['jitter']['crop_patch']
 
     if not shape_known:
@@ -469,7 +469,7 @@ def inputs(hypes, q, phase):
         if hypes['solver']['batch_size'] > 1:
             logging.error("Using a batch_size of {} with unknown shape."
                           .format(hypes['solver']['batch_size']))
-            logging.error("Set batch_size to 1 or use `reseize_image` "
+            logging.error("Set batch_size to 1 or use `resize_image` "
                           "or `crop_patch` to obtain a defined shape")
             raise ValueError
     else:
