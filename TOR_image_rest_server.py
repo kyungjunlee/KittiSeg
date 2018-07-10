@@ -4,8 +4,7 @@ Techable Object Recogznier Server
 - recognize them
 - send back to the client recognition results
 
-written by Jonggi Hong
-modified by Kyungjun Lee
+written by Kyungjun Lee
 """
 from TOR import Recognizer
 
@@ -309,7 +308,7 @@ def recognize_image():
 """
 retrain classifiers with images received from a client
 @input  : N/A
-@output : Response {label, probability}
+@output : Response {classifier model filename, classifier label text filename}
 """
 # route http posts to this method
 @receiver.route('/retrain', methods = ['POST'])

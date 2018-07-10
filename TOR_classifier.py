@@ -44,6 +44,8 @@ class Classifier:
     self.output_operation = obj_recog_graph.get_operation_by_name(output_name)
 
     # set to allocate memory on GPU as needed
+    # For more details, look at
+    # https://stackoverflow.com/questions/36927607/how-can-i-solve-ran-out-of-gpu-memory-in-tensorflow
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
 
