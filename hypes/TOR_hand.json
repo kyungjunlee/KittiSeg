@@ -1,10 +1,10 @@
 {
   "model": {
-    "input_file": "../inputs/gtea_input.py",
+    "input_file": "../inputs/TOR_hand_input.py",
     "architecture_file" : "../encoder/fcn32_vgg.py",
-    "objective_file" : "../decoder/gtea_multiloss.py",
-    "optimizer_file" : "../optimizer/generic_optimizer.py",
-    "evaluator_file" : "../evals/gtea_eval.py"
+    "objective_file" : "../decoder/TOR_multiloss.py",
+    "optimizer_file" : "../optimizer/TOR_optimizer.py",
+    "evaluator_file" : "../evals/TOR_hand_eval.py"
   },
   "path": ["../incl"],
 
@@ -50,21 +50,21 @@
 
   "logging": {
     "display_iter": 50,
-    "eval_iter": 100,
-    "write_iter": 1000,
-    "save_iter": 1000,
-    "image_iter": 1000
+    "eval_iter": 500,
+    "write_iter": 5000,
+    "save_iter": 5000,
+    "image_iter": 5000
   },
 
   "solver": {
       "opt": "Adam",
-      "batch_size": 32,
+      "batch_size": 16,
       "epsilon": 0.000000001,
       "adam_eps": 0.00001,
       "threads": 4,
       "learning_rate": 1e-5,
       "learning_rate_step": null,
-      "max_steps": 1000
+      "max_steps": 10000
   },
   "use_fc_wd": true,
   "loss": "xentropy",
